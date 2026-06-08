@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https://accounts.google.com https://sheets.googleapis.com https://fonts.googleapis.com https://fonts.gstatic.com; connect-src *;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>GTD + Rotina</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f1117;--surf:#161b27;--surfH:#1e2535;--bord:#2a3348;
+  --text:#e8eaf0;--mid:#8892a4;--dim:#4a5568;
+  --acc:#6c8ef5;--accD:rgba(108,142,245,.14);
+  --pink:#e879a0;--pinkD:rgba(232,121,160,.14);
+  --grn:#4ade80;--grnD:rgba(74,222,128,.14);
+  --amb:#fbbf24;--ambD:rgba(251,191,36,.14);
+  --red:#f87171;--redD:rgba(248,113,113,.14);
+  --ctx:#a78bfa;--ctxD:rgba(167,139,250,.14);
+  --r:12px;--r-sm:8px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overscroll-behavior:none}
+#app{max-width:430px;margin:0 auto;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;position:relative}
+
+/* ── TopBar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:13px 15px 10px;border-bottom:1px solid var(--bord);background:var(--surf);position:sticky;top:0;z-index:30;gap:10px}
+.topbar-title{font-size:16px;font-weight:600;flex:1}
+.topbar-badge{font-size:11px;background:var(--ambD);color:var(--amb);border-radius:20px;padding:2px 9px;font-weight:600}
+.sync-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-sm);border:1px solid var(--bord);background:transparent;color:var(--mid);cursor:pointer;font-size:15px;flex-shrink:0}
+.sync-btn.syncing{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Content ── */
+.content{flex:1;overflow-y:auto;padding:13px 14px 90px;-webkit-overflow-scrolling:touch}
+
+/* ── Nav ── */
+.nav{display:flex;background:var(--surf);border-top:1px solid var(--bord);position:sticky;bottom:0;z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 2px;cursor:pointer;font-size:9px;font-weight:500;color:var(--dim);border:none;background:none;transition:color .15s;position:relative}
+.nb.on{color:var(--acc)}
+.nb i{font-size:20px}
+.nb .dot{position:absolute;top:5px;right:calc(50% - 14px);width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid var(--surf)}
+
+/* ── Cards ── */
+.card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:13px;margin-bottom:10px}
+.card-l{border-left:3px solid var(--acc);border-radius:0 var(--r) var(--r) 0}
+
+/* ── Pills ── */
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.p-acc{background:var(--accD);color:var(--acc)}
+.p-pink{background:var(--pinkD);color:var(--pink)}
+.p-grn{background:var(--grnD);color:var(--grn)}
+.p-amb{background:var(--ambD);color:var(--amb)}
+.p-red{background:var(--redD);color:var(--red)}
+.p-ctx{background:var(--ctxD);color:var(--ctx)}
+.p-gray{background:var(--surfH);color:var(--mid)}
+
+/* ── Buttons ── */
+.btn{border:none;border-radius:var(--r-sm);padding:8px 15px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;transition:opacity .15s}
+.btn:active{opacity:.75}
+.btn-p{background:var(--acc);color:#fff}
+.btn-g{background:transparent;border:1px solid var(--bord);color:var(--mid)}
+.btn-grn{background:var(--grn);color:#000}
+.btn-red{background:transparent;border:1px solid var(--bord);color:var(--red)}
+.btn-sm{padding:5px 11px;font-size:11px}
+
+/* ── Inputs ── */
+.inp{width:100%;border:1px solid var(--bord);border-radius:var(--r-sm);padding:9px 11px;font-size:14px;background:var(--surfH);color:var(--text);outline:none;font-family:inherit;transition:border-color .15s}
+.inp:focus{border-color:var(--acc)}
+.sel{width:100%;border:1px solid var(--bord);border-radius:var(--r-sm);padding:9px 11px;font-size:13px;background:var(--surfH);color:var(--text);outline:none;font-family:inherit;cursor:pointer}
+.lbl{font-size:10px;font-weight:600;color:var(--dim);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;display:block}
+.fld{margin-bottom:12px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── Section label ── */
+.sec{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.7px;margin:16px 0 8px;display:flex;align-items:center;gap:5px}
+
+/* ── Chips row ── */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;border:1px solid var(--bord);background:transparent;color:var(--mid);font-family:inherit;transition:all .15s}
+.chip.on{background:var(--accD);color:var(--acc);border-color:var(--acc)}
+
+/* ── Modal ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--surf);border-radius:16px 16px 0 0;padding:18px 16px 24px;width:100%;max-width:430px;max-height:92vh;overflow-y:auto}
+.modal-handle{width:36px;height:4px;background:var(--bord);border-radius:2px;margin:0 auto 15px}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:16px}
+
+/* ── Progress ── */
+.pbar{height:5px;background:var(--bord);border-radius:5px;overflow:hidden}
+.pfill{height:100%;border-radius:5px;background:var(--acc);transition:width .4s}
+
+/* ── Checklist ── */
+.ci{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1px solid var(--bord);border-radius:var(--r-sm);margin-bottom:5px;cursor:pointer;transition:all .15s}
+.ci.done{background:var(--grnD);border-color:rgba(74,222,128,.3)}
+.ci.done span{text-decoration:line-through;color:var(--mid)}
+.cbox{width:17px;height:17px;min-width:17px;border-radius:4px;border:1.5px solid var(--bord);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.cbox.tk{background:var(--grn);border-color:var(--grn);color:#000}
+
+/* ── Circ btn ── */
+.circ{width:20px;height:20px;min-width:20px;border-radius:50%;border:1.5px solid var(--bord);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;flex-shrink:0}
+.circ.done{background:var(--grn);border-color:var(--grn);color:#000}
+
+/* ── Water ── */
+.cup{width:30px;height:30px;border-radius:6px;border:1.5px solid var(--acc);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:background .2s;user-select:none}
+.cup.full{background:var(--acc)}
+.cup.empty{background:transparent}
+
+/* ── Ticker ── */
+.ticker-wrap{overflow:hidden;border-top:1px solid var(--bord);border-bottom:1px solid var(--bord);padding:7px 0;margin-bottom:13px;background:var(--surfH)}
+.ticker-inner{display:flex;white-space:nowrap;animation:ticker 26s linear infinite}
+.ticker-inner:hover{animation-play-state:paused}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.tick-item{display:inline-flex;align-items:center;gap:7px;padding:0 18px;font-size:12px;color:var(--mid)}
+.tick-item b{color:var(--text);font-weight:600}
+
+/* ── Misc ── */
+.row{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.rowb{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.iname{font-size:13px;font-weight:600;line-height:1.35;margin-bottom:4px}
+.imeta{font-size:11px;color:var(--mid)}
+.empty{text-align:center;padding:40px 20px;color:var(--mid)}
+.stat{background:var(--surfH);border-radius:var(--r-sm);padding:11px 13px}
+.stat .v{font-size:26px;font-weight:600;line-height:1}
+.stat .l{font-size:11px;color:var(--mid);margin-top:3px}
+
+/* ── Setup screen ── */
+.setup{padding:24px 20px;max-width:430px;margin:0 auto}
+.setup h2{font-size:20px;font-weight:700;margin-bottom:6px}
+.setup p{font-size:13px;color:var(--mid);line-height:1.6;margin-bottom:14px}
+.setup .step{display:flex;gap:12px;margin-bottom:20px;padding:14px;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r)}
+.setup .step-num{width:26px;height:26px;min-width:26px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;margin-top:1px}
+.setup .step-body{flex:1}
+.setup .step-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.setup .step-desc{font-size:12px;color:var(--mid);line-height:1.5}
+.setup code{background:var(--surfH);border:1px solid var(--bord);border-radius:4px;padding:1px 5px;font-size:11px;font-family:monospace;color:var(--acc);word-break:break-all}
+.copy-btn{background:var(--accD);color:var(--acc);border:none;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:5px;font-family:inherit}
+
+/* ── Spinner overlay ── */
+.loading-overlay{position:fixed;inset:0;background:rgba(15,17,23,.85);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.spinner{width:36px;height:36px;border:3px solid var(--bord);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+.loading-msg{font-size:13px;color:var(--mid)}
+
+/* ── Pomodoro floating panel ── */
+.pomo-fab{position:fixed;bottom:calc(86px + 12px);right:calc(50% - 215px + 12px);width:44px;height:44px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:20px;cursor:pointer;z-index:50;box-shadow:0 4px 16px rgba(248,113,113,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.pomo-fab:active{transform:scale(.92)}
+.pomo-fab.running{background:var(--grn);box-shadow:0 4px 16px rgba(74,222,128,.4);animation:pomo-pulse 2s ease-in-out infinite}
+.pomo-fab.break{background:var(--acc);box-shadow:0 4px 16px rgba(108,142,245,.4)}
+@keyframes pomo-pulse{0%,100%{box-shadow:0 4px 16px rgba(74,222,128,.4)}50%{box-shadow:0 4px 28px rgba(74,222,128,.7)}}
+
+.pomo-panel{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--surf);border-radius:20px 20px 0 0;border-top:1px solid var(--bord);z-index:80;padding:16px 18px 24px;box-shadow:0 -8px 32px rgba(0,0,0,.4);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.pomo-panel.hidden{transform:translateX(-50%) translateY(100%)}
+
+.pomo-ring-wrap{position:relative;width:140px;height:140px;margin:0 auto 14px}
+.pomo-ring-wrap svg{transform:rotate(-90deg)}
+.pomo-ring-bg{fill:none;stroke:var(--bord);stroke-width:8}
+.pomo-ring-fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dashoffset .9s linear,stroke .3s}
+.pomo-time{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pomo-time .t{font-size:30px;font-weight:700;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.pomo-time .lbl{font-size:10px;color:var(--mid);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+
+.pomo-task{font-size:13px;font-weight:600;text-align:center;margin-bottom:6px;color:var(--text);min-height:20px;padding:0 8px}
+.pomo-count{text-align:center;margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:6px}
+.pomo-dot{width:10px;height:10px;border-radius:50%;background:var(--bord)}
+.pomo-dot.done{background:var(--red)}
+.pomo-dot.break-done{background:var(--acc)}
+
+.pomo-controls{display:flex;gap:8px;justify-content:center;margin-bottom:14px}
+.pomo-hist{max-height:140px;overflow-y:auto;border-top:1px solid var(--bord);padding-top:10px}
+.pomo-hist-item{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bord);font-size:12px}
+.pomo-hist-item:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONFIG — preenchida pelo usuário na primeira abertura
+// ═══════════════════════════════════════════════════════
+const CFG_KEY = "gtd_config_v1";
+let CFG = {};
+
+try { CFG = JSON.parse(localStorage.getItem(CFG_KEY)||"{}"); } catch {}
+
+// ═══════════════════════════════════════════════════════
+// GOOGLE SHEETS API
+// ═══════════════════════════════════════════════════════
+const SHEETS_URL = id => `https://sheets.googleapis.com/v4/spreadsheets/${id}`;
+
+async function sheetsGet(range) {
+  // Use OAuth token if available, fall back to API key for public sheets
+  const headers = {};
+  if (CFG.accessToken) headers["Authorization"] = `Bearer ${CFG.accessToken}`;
+  const keyParam = CFG.accessToken ? "" : `?key=${CFG.apiKey}`;
+  const url = `${SHEETS_URL(CFG.sheetId)}/values/${encodeURIComponent(range)}${keyParam}`;
+  const r = await fetch(url, { headers });
+  if (r.status === 401) {
+    // Token expired — clear it and ask user to re-auth
+    CFG.accessToken = null;
+    localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
+    showToast("Sessão expirada. Clique em Reconectar.", true);
+    renderReconnectBtn();
+    throw new Error("Token expired");
+  }
+  if (!r.ok) throw new Error(await r.text());
+  const d = await r.json();
+  return d.values || [];
+}
+
+async function sheetsWrite(range, values) {
+  const url = `${SHEETS_URL(CFG.sheetId)}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED&key=${CFG.apiKey}`;
+  const r = await fetch(url, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${CFG.accessToken}` },
+    body: JSON.stringify({ values })
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+async function sheetsClear(range) {
+  const url = `${SHEETS_URL(CFG.sheetId)}/values/${encodeURIComponent(range)}:clear?key=${CFG.apiKey}`;
+  await fetch(url, { method: "POST", headers: { "Authorization": `Bearer ${CFG.accessToken}` } });
+}
+
+// OAuth2 PKCE flow
+async function signInGoogle() {
+  const clientId = CFG.clientId;
+  const redirect = window.location.origin + window.location.pathname;
+  const scope = "https://www.googleapis.com/auth/spreadsheets";
+  const state = Math.random().toString(36).slice(2);
+  localStorage.setItem("oauth_state", state);
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${encodeURIComponent(scope)}&state=${state}`;
+  window.location.href = url;
+}
+
+function handleOAuthCallback() {
+  const hash = window.location.hash.slice(1);
+  if (!hash.includes("access_token")) return false;
+  const params = new URLSearchParams(hash);
+  const token = params.get("access_token");
+  const state = params.get("state");
+  if (state !== localStorage.getItem("oauth_state")) return false;
+  CFG.accessToken = token;
+  localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
+  window.history.replaceState({}, "", window.location.pathname);
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════
+// DATA HELPERS
+// ═══════════════════════════════════════════════════════
+const todayStr = () => new Date().toISOString().split("T")[0];
+const uid = () => Math.random().toString(36).slice(2,9);
+const daysDiff = d => d ? Math.round((new Date(d+"T00:00:00") - new Date(todayStr()+"T00:00:00")) / 86400000) : null;
+const fmtD = d => { if(!d)return"—"; const[y,m,day]=d.split("-"); return`${day}/${m}`; };
+const fmtDFull = d => { if(!d)return"—"; const[y,m,day]=d.split("-"); return`${day}/${m}/${y}`; };
+const proxData = item => { if(!item.ultima)return null; const d=new Date(item.ultima+"T00:00:00"); d.setDate(d.getDate()+item.freq); return d.toISOString().split("T")[0]; };
+function gSt(item){ if(!item.ultima)return"sem"; const p=new Date(item.ultima+"T00:00:00"); p.setDate(p.getDate()+item.freq); const d=daysDiff(p.toISOString().split("T")[0]); if(d<0)return"at"; if(d<=3)return"eb"; return"ok"; }
+
+// ═══════════════════════════════════════════════════════
+// LOCAL STATE (cache enquanto não sincroniza)
+// ═══════════════════════════════════════════════════════
+const LOCAL_KEY = "gtd_data_v1";
+const DEFAULT_DATA = {
+  inbox: [],
+  acoes: [],
+  projetos: [],
+  rotina: [
+    {id:"b1",nome:"Lavar os cabelos",cat:"Beleza",freq:3,tempo:"30min",ultima:null},
+    {id:"b2",nome:"Hidratação dos cabelos",cat:"Beleza",freq:7,tempo:"45min",ultima:null},
+    {id:"b3",nome:"Escovar / modelar",cat:"Beleza",freq:2,tempo:"20min",ultima:null},
+    {id:"b4",nome:"Aparar as pontas (salão)",cat:"Beleza",freq:60,tempo:"90min",ultima:null},
+    {id:"b5",nome:"Skincare matinal",cat:"Beleza",freq:1,tempo:"10min",ultima:null},
+    {id:"b6",nome:"Skincare noturno",cat:"Beleza",freq:1,tempo:"10min",ultima:null},
+    {id:"b7",nome:"Esfoliação do rosto",cat:"Beleza",freq:7,tempo:"15min",ultima:null},
+    {id:"b8",nome:"Máscara facial",cat:"Beleza",freq:7,tempo:"20min",ultima:null},
+    {id:"b9",nome:"Hidratação do corpo",cat:"Beleza",freq:1,tempo:"10min",ultima:null},
+    {id:"b10",nome:"Esfoliação do corpo",cat:"Beleza",freq:14,tempo:"20min",ultima:null},
+    {id:"b11",nome:"Protetor solar",cat:"Beleza",freq:1,tempo:"5min",ultima:null},
+    {id:"b12",nome:"Depilação (pernas/axila)",cat:"Beleza",freq:28,tempo:"60min",ultima:null},
+    {id:"b13",nome:"Depilação sobrancelhas",cat:"Beleza",freq:21,tempo:"30min",ultima:null},
+    {id:"b14",nome:"Manicure (mãos)",cat:"Beleza",freq:14,tempo:"60min",ultima:null},
+    {id:"b15",nome:"Pedicure (pés)",cat:"Beleza",freq:21,tempo:"60min",ultima:null},
+    {id:"b16",nome:"Hidratação das cutículas",cat:"Beleza",freq:3,tempo:"10min",ultima:null},
+    {id:"b17",nome:"Escovação dos dentes",cat:"Beleza",freq:1,tempo:"5min",ultima:null},
+    {id:"b18",nome:"Fio dental",cat:"Beleza",freq:1,tempo:"5min",ultima:null},
+    {id:"c1",nome:"Lavar vaso – Banheiro social",cat:"Casa",freq:7,tempo:"30min",ultima:null},
+    {id:"c2",nome:"Lavar box – Banheiro social",cat:"Casa",freq:14,tempo:"60min",ultima:null},
+    {id:"c3",nome:"Limpar espelho",cat:"Casa",freq:7,tempo:"15min",ultima:null},
+    {id:"c4",nome:"Lavar vaso – Suíte",cat:"Casa",freq:7,tempo:"30min",ultima:null},
+    {id:"c5",nome:"Lavar a louça",cat:"Casa",freq:1,tempo:"30min",ultima:null},
+    {id:"c6",nome:"Limpar a pia – Cozinha",cat:"Casa",freq:3,tempo:"15min",ultima:null},
+    {id:"c7",nome:"Limpar o fogão",cat:"Casa",freq:7,tempo:"30min",ultima:null},
+    {id:"c8",nome:"Limpar o microondas",cat:"Casa",freq:14,tempo:"20min",ultima:null},
+    {id:"c9",nome:"Limpar a geladeira",cat:"Casa",freq:30,tempo:"60min",ultima:null},
+    {id:"c10",nome:"Varrer e passar pano – Sala",cat:"Casa",freq:7,tempo:"30min",ultima:null},
+    {id:"c11",nome:"Varrer e passar pano – Suíte",cat:"Casa",freq:7,tempo:"30min",ultima:null},
+    {id:"c12",nome:"Trocar roupa de cama",cat:"Casa",freq:7,tempo:"30min",ultima:null},
+    {id:"c13",nome:"Trocar toalhas de banho",cat:"Casa",freq:7,tempo:"10min",ultima:null},
+    {id:"c14",nome:"Tirar o pó dos móveis",cat:"Casa",freq:7,tempo:"20min",ultima:null},
+    {id:"c15",nome:"Varrer o quintal",cat:"Casa",freq:7,tempo:"30min",ultima:null},
+    {id:"c16",nome:"Lavar a garagem",cat:"Casa",freq:30,tempo:"60min",ultima:null},
+    {id:"c17",nome:"Podar árvores",cat:"Casa",freq:60,tempo:"180min",ultima:null},
+    {id:"l1",nome:"Lavar tapetes",cat:"Lavanderia",freq:30,tempo:"60min",ultima:null},
+    {id:"l2",nome:"Lavar panos de chão",cat:"Lavanderia",freq:14,tempo:"30min",ultima:null},
+    {id:"l3",nome:"Lavar panos de prato",cat:"Lavanderia",freq:7,tempo:"20min",ultima:null},
+    {id:"l4",nome:"Lavar toalhas",cat:"Lavanderia",freq:7,tempo:"30min",ultima:null},
+    {id:"d1",nome:"Escovar os pelos",cat:"Dogs",freq:7,tempo:"60min",ultima:null},
+    {id:"d2",nome:"Dar banho",cat:"Dogs",freq:14,tempo:"180min",ultima:null},
+    {id:"d3",nome:"Aplicar medicamento",cat:"Dogs",freq:30,tempo:"30min",ultima:null},
+  ],
+  revisao: Array(16).fill(false),
+  contextos: ["@Casa","@Trabalho","@Computador","@Telefone","@Rua","@Academia"],
+  agua: { meta:8, copos:0, dataUlt:"" },
+};
+
+let D = DEFAULT_DATA;
+try { const r=localStorage.getItem(LOCAL_KEY); if(r) D={...DEFAULT_DATA,...JSON.parse(r),rotina:JSON.parse(r).rotina||DEFAULT_DATA.rotina}; } catch {}
+
+function saveLocal() { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(D)); } catch {} }
+
+// ═══════════════════════════════════════════════════════
+// SHEETS SYNC
+// ═══════════════════════════════════════════════════════
+let syncing = false;
+let lastSync = null;
+
+async function syncToSheets() {
+  if (!CFG.sheetId || !CFG.accessToken) return;
+  syncing = true; renderSyncBtn();
+  try {
+    // Serialise each section as JSON in a single cell per sheet tab
+    const sections = [
+      ["Inbox!A1",    [[JSON.stringify(D.inbox)]]],
+      ["Ações!A1",    [[JSON.stringify(D.acoes)]]],
+      ["Projetos!A1", [[JSON.stringify(D.projetos)]]],
+      ["Rotina!A1",   [[JSON.stringify(D.rotina)]]],
+      ["Config!A1",   [[JSON.stringify({ revisao:D.revisao, contextos:D.contextos, agua:D.agua })]]],
+    ];
+    for (const [range, values] of sections) {
+      await sheetsWrite(range, values);
+    }
+    lastSync = new Date();
+    showToast("Sincronizado com o Google Sheets ✓");
+  } catch(e) {
+    console.error(e);
+    if (e.message && e.message.includes("401")) {
+      CFG.accessToken = null;
+      localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
+      renderReconnectBtn();
+      showToast("Sessão expirada. Clique em Reconectar.", true);
+    } else {
+      showToast("Erro ao sincronizar: " + e.message, true);
+    }
+  }
+  syncing = false; renderSyncBtn();
+}
+
+async function syncFromSheets() {
+  if (!CFG.sheetId || !CFG.apiKey) return;
+  syncing = true; renderSyncBtn();
+  try {
+    const load = async (range) => {
+      const rows = await sheetsGet(range);
+      return rows.length && rows[0].length ? JSON.parse(rows[0][0]) : null;
+    };
+    const inbox    = await load("Inbox!A1");
+    const acoes    = await load("Ações!A1");
+    const projetos = await load("Projetos!A1");
+    const rotina   = await load("Rotina!A1");
+    const config   = await load("Config!A1");
+
+    if (inbox)    D.inbox    = inbox;
+    if (acoes)    D.acoes    = acoes;
+    if (projetos) D.projetos = projetos;
+    if (rotina)   D.rotina   = rotina;
+    if (config) {
+      if (config.revisao)   D.revisao   = config.revisao;
+      if (config.contextos) D.contextos = config.contextos;
+      if (config.agua)      D.agua      = config.agua;
+    }
+    saveLocal();
+    lastSync = new Date();
+    showToast("Dados atualizados do Google Sheets ✓");
+    render();
+  } catch(e) {
+    console.error(e);
+    showToast("Erro ao carregar. Usando dados locais.", true);
+  }
+  syncing = false; renderSyncBtn();
+}
+
+// Auto-sync a cada 5min se tiver token
+setInterval(() => { if(CFG.accessToken) syncToSheets(); }, 5*60*1000);
+
+// ═══════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, isErr=false) {
+  let t = document.getElementById("toast");
+  if (!t) { t=document.createElement("div"); t.id="toast"; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.style.cssText = `position:fixed;bottom:${90+8}px;left:50%;transform:translateX(-50%);background:${isErr?"var(--redD)":"var(--grnD)"};color:${isErr?"var(--red)":"var(--grn)"};border:1px solid ${isErr?"var(--red)":"var(--grn)"};border-radius:20px;padding:7px 16px;font-size:12px;font-weight:600;z-index:999;white-space:nowrap;transition:opacity .3s;max-width:90vw;text-align:center`;
+  t.style.opacity="1";
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.opacity="0"; }, 3000);
+}
+
+function renderSyncBtn() {
+  const btn = document.getElementById("sync-btn");
+  if (!btn) return;
+  btn.className = "sync-btn" + (syncing ? " syncing" : "");
+  btn.innerHTML = `<span aria-hidden="true">🔄</span>`;
+  btn.title = lastSync ? `Última sync: ${lastSync.toLocaleTimeString()}` : "Sincronizar";
+}
+
+function renderReconnectBtn() {
+  if (document.getElementById("reconnect-bar")) return;
+  const bar = document.createElement("div");
+  bar.id = "reconnect-bar";
+  bar.style.cssText = "position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--redD);border-bottom:1px solid var(--red);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;z-index:50;gap:8px";
+  bar.innerHTML = `<span style="font-size:12px;color:var(--red);font-weight:600">Sessão expirada — reconecte para sincronizar</span>
+    <button onclick="reauth()" style="background:var(--red);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Reconectar</button>`;
+  document.getElementById("app").prepend(bar);
+}
+
+window.reauth = () => {
+  const bar = document.getElementById("reconnect-bar");
+  if (bar) bar.remove();
+  signInGoogle();
+};
+
+function pill(cls, txt) { return `<span class="pill ${cls}">${txt}</span>`; }
+
+function el(tag, attrs={}, ...children) {
+  const e = document.createElement(tag);
+  for (const [k,v] of Object.entries(attrs)) {
+    if (k === "onclick") e.onclick = v;
+    else if (k === "onchange") e.onchange = v;
+    else if (k === "class") e.className = v;
+    else e.setAttribute(k, v);
+  }
+  for (const c of children) {
+    if (typeof c === "string") e.insertAdjacentHTML("beforeend", c);
+    else if (c) e.appendChild(c);
+  }
+  return e;
+}
+
+// ═══════════════════════════════════════════════════════
+// STATE MANAGEMENT
+// ═══════════════════════════════════════════════════════
+let page = "hoje";
+let modal = null;
+let ctxFiltro = "Todos";
+let aFiltro = "Todos";
+let rotCat = "Todas", rotSt = "Todos";
+let showProc = false;
+
+function setState(fn) {
+  if (typeof fn === "function") fn(D);
+  saveLocal();
+  render();
+  // debounce sync
+  clearTimeout(window._syncTimer);
+  if (CFG.accessToken) window._syncTimer = setTimeout(syncToSheets, 2000);
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER ENGINE
+// ═══════════════════════════════════════════════════════
+const catInfo = { Beleza:["p-pink","var(--pink)"], Casa:["p-acc","var(--acc)"], Lavanderia:["p-amb","var(--amb)"], Dogs:["p-grn","var(--grn)"] };
+const prioInfo = { Alta:["p-red","var(--red)"], Média:["p-amb","var(--amb)"], Baixa:["p-grn","var(--grn)"] };
+const stInfo = { at:{l:"Atrasada",cls:"p-red",c:"var(--red)"}, eb:{l:"Em breve",cls:"p-amb",c:"var(--amb)"}, ok:{l:"Em dia",cls:"p-grn",c:"var(--grn)"}, sem:{l:"Sem registro",cls:"p-gray",c:"var(--mid)"} };
+const navDef = [{id:"hoje",icon:"☀️",lbl:"Hoje"},{id:"inbox",icon:"📥",lbl:"Inbox"},{id:"acoes",icon:"✅",lbl:"Ações"},{id:"projetos",icon:"🗂",lbl:"Projetos"},{id:"rotina",icon:"🏠",lbl:"Rotina"},{id:"revisao",icon:"🔄",lbl:"Revisão"}];
+const pageLabels = {hoje:"Hoje",inbox:"Inbox",acoes:"Próximas Ações",projetos:"Projetos",rotina:"Rotina",revisao:"Revisão Semanal"};
+
+function render() {
+  if (!CFG.sheetId || !CFG.apiKey || !CFG.clientId) { renderSetup(); return; }
+  const app = document.getElementById("app");
+  const ic = D.inbox.filter(i=>!i.proc).length;
+  const rc = D.rotina.filter(r=>gSt(r)==="at").length;
+
+  app.innerHTML = `
+    <div class="topbar">
+      <span class="topbar-title">${pageLabels[page]||"GTD"}</span>
+      ${page==="inbox"&&ic>0?`<span class="topbar-badge">${ic} pendente${ic!==1?"s":""}</span>`:""}
+      <span class="spacer" style="flex:1"></span>
+      <button onclick="openModal('export-cfg')" style="background:transparent;border:1px solid var(--bord);border-radius:var(--r-sm);width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;color:var(--mid)" title="Configurar outro dispositivo">📲</button>
+      <button id="sync-btn" class="sync-btn" onclick="manualSync()" title="Sincronizar"><span aria-hidden="true">🔄</span></button>
+    </div>
+    <div class="content" id="content"></div>
+    <nav class="nav">
+      ${navDef.map(n=>{
+        const dot=(n.id==="inbox"&&ic>0)||(n.id==="rotina"&&rc>0);
+        return`<button class="nb${page===n.id?" on":""}" onclick="goPage('${n.id}')">
+          <span style="font-size:18px">${n.icon}</span>${dot?'<span class="dot"></span>':''}<span>${n.lbl}</span>
+        </button>`;
+      }).join("")}
+    </nav>`;
+
+  const ct = document.getElementById("content");
+  if(page==="hoje") renderHoje(ct);
+  else if(page==="inbox") renderInbox(ct);
+  else if(page==="acoes") renderAcoes(ct);
+  else if(page==="projetos") renderProjetos(ct);
+  else if(page==="rotina") renderRotina(ct);
+  else if(page==="revisao") renderRevisao(ct);
+
+  if(modal) renderModal();
+  renderSyncBtn();
+}
+
+window.goPage = p => { page=p; modal=null; render(); };
+window.manualSync = async () => { await syncFromSheets(); render(); };
+
+// ═══════════════════════════════════════════════════════
+// HOJE
+// ═══════════════════════════════════════════════════════
+function renderHoje(ct) {
+  const hoje = todayStr();
+  const dn = new Date();
+  const dias=["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
+  const meses=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+
+  // check água reset
+  if (D.agua.dataUlt !== hoje && D.agua.copos > 0) {
+    D.agua.copos = 0; D.agua.dataUlt = hoje; saveLocal();
+  }
+
+  const {meta,copos} = D.agua;
+  const pctAgua = Math.min(100,Math.round(copos/meta*100));
+
+  const ativos = D.projetos.filter(p=>p.status==="Ativo");
+  const tickItems = ativos.length ? [...ativos,...ativos].map(p=>
+    `<span class="tick-item"><b>${p.nome}</b> ${pill("p-gray",p.pct+"%")} ${p.proxAcao?`<span style="font-size:10px;color:var(--dim)">→ ${p.proxAcao}</span>`:""}  <span style="color:var(--bord);font-size:16px">·</span></span>`
+  ).join("") : `<span class="tick-item">Nenhum projeto ativo</span>`;
+
+  const atHoje = D.acoes.filter(a=>a.prazo===hoje&&a.status!=="Feito");
+  const comPrazo = D.acoes.filter(a=>a.prazo&&a.prazo!==hoje&&a.status!=="Feito"&&daysDiff(a.prazo)>=0&&daysDiff(a.prazo)<=7).sort((a,b)=>a.prazo.localeCompare(b.prazo));
+  const ctxs = D.contextos||[];
+  const aCtx = D.acoes.filter(a=>a.status!=="Feito"&&(!a.prazo||daysDiff(a.prazo)>7));
+  const grupos = ctxs.map(c=>({ctx:c,items:aCtx.filter(a=>a.ctx===c)})).filter(g=>g.items.length>0);
+  const rotAt = D.rotina.filter(r=>gSt(r)==="at");
+  const rotEb = D.rotina.filter(r=>gSt(r)==="eb");
+
+  ct.innerHTML = `
+  <div style="font-size:12px;color:var(--mid);margin-bottom:11px">${dias[dn.getDay()]}, ${dn.getDate()} de ${meses[dn.getMonth()]}</div>
+
+  <div class="card" style="margin-bottom:10px">
+    <div class="rowb" style="margin-bottom:8px">
+      <span style="font-size:13px;font-weight:600">💧 Água</span>
+      <span style="font-size:12px;color:var(--mid)">${copos}/${meta} copos</span>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px">
+      ${Array.from({length:meta},(_,i)=>`<div class="cup ${i<copos?"full":"empty"}" onclick="tapCopo(${i})">💧</div>`).join("")}
+    </div>
+    <div class="pbar" style="margin-bottom:6px"><div class="pfill" style="width:${pctAgua}%"></div></div>
+    ${copos>=meta?`<div style="font-size:11px;color:var(--grn);font-weight:600;text-align:center;margin-bottom:7px">Meta atingida! 🎉</div>`:`<div style="font-size:11px;color:var(--dim);margin-bottom:7px">Faltam ${meta-copos} copos para a meta</div>`}
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-p btn-sm" onclick="addCopo()" style="flex:1">+ Copo</button>
+      <button class="btn btn-g btn-sm" onclick="openModal('agua-meta')">Meta: ${meta}</button>
+    </div>
+  </div>
+
+  ${ativos.length?`<div class="ticker-wrap"><div class="ticker-inner">${tickItems}${tickItems}</div></div>`:""}
+
+  ${atHoje.length?`<div class="sec">⭐ Para hoje</div>${atHoje.map(a=>cardAcaoHtml(a,true)).join("")}`:""}
+  ${comPrazo.length?`<div class="sec">📅 Com prazo próximo</div>${comPrazo.map(a=>cardAcaoHtml(a,true)).join("")}`:""}
+
+  ${grupos.length?`<div class="sec">🏷️ Por contexto</div>${grupos.map(g=>`
+  <div class="card" style="padding:10px 12px;margin-bottom:8px">
+    <div class="rowb" style="margin-bottom:7px">
+      ${pill("p-ctx",g.ctx)}
+      <button class="btn btn-p btn-sm" onclick="goCtx('${g.ctx}')">Ver tudo</button>
+    </div>
+    ${g.items.slice(0,3).map(a=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--bord)">
+      <button class="circ${a.status==="Feito"?" done":""}" onclick="toggleAcao('${a.id}')">✓</button>
+      <span style="font-size:12px;flex:1;${a.status==="Feito"?"text-decoration:line-through;color:var(--mid)":""}">${a.acao}</span>
+      ${pill(...(prioInfo[a.prio]||["p-gray",""]),a.prio)}
+    </div>`).join("")}
+    ${g.items.length>3?`<div style="font-size:11px;color:var(--dim);margin-top:5px;text-align:right">+${g.items.length-3} mais</div>`:""}
+  </div>`).join("")}`:""}
+
+  ${(rotAt.length||rotEb.length)?`<div class="sec">🏠 Rotina urgente</div>${[...rotAt.slice(0,4),...rotEb.slice(0,3)].map(r=>cardRotinaHtml(r)).join("")}
+  ${(rotAt.length+rotEb.length)>7?`<div style="font-size:11px;color:var(--dim);text-align:center;margin:6px 0">+${rotAt.length+rotEb.length-7} itens — <a href="#" onclick="goPage('rotina')" style="color:var(--acc)">ver todos</a></div>`:""}`:""} `;
+}
+
+function cardAcaoHtml(a, showCtx=false) {
+  const venc = a.prazo&&daysDiff(a.prazo)<0;
+  const diff = a.prazo?daysDiff(a.prazo):null;
+  const diffTxt = diff!==null?(diff===0?"hoje":diff<0?`${Math.abs(diff)}d atrás`:`em ${diff}d`):"";
+  const [pc] = prioInfo[a.prio]||["p-gray"];
+  const bc = a.prio==="Alta"?"var(--red)":a.prio==="Média"?"var(--amb)":"var(--grn)";
+  const pomos = a.pomodoros||0;
+  const isActive = PM.taskId===a.id;
+  return `<div class="card card-l" style="border-left-color:${bc};opacity:${a.status==="Feito"?.5:1}">
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <button class="circ${a.status==="Feito"?" done":""}" style="margin-top:2px" onclick="toggleAcao('${a.id}')">✓</button>
+      <div style="flex:1">
+        <div class="iname" style="${a.status==="Feito"?"text-decoration:line-through;color:var(--mid)":""}">${a.acao}</div>
+        <div class="row">
+          ${pill(pc,a.prio)}
+          ${showCtx&&a.ctx?pill("p-ctx",a.ctx):""}
+          ${a.prazo?`<span class="imeta" style="color:${venc?"var(--red)":diff===0?"var(--acc)":""}">📅 ${diffTxt}</span>`:""}
+          ${a.dur?`<span class="imeta">⏱ ${a.dur}</span>`:""}
+          ${pomos>0?`<span class="imeta" style="color:var(--red)">🍅 ${pomos}</span>`:""}
+        </div>
+      </div>
+      <button onclick="startPomo('acao','${a.id}',this)" style="background:${isActive?'var(--grnD)':'var(--redD)'};color:${isActive?'var(--grn)':'var(--red)'};border:1px solid ${isActive?'var(--grn)':'var(--red)'};border-radius:var(--r-sm);padding:4px 9px;font-size:13px;cursor:pointer;flex-shrink:0">${isActive?"▶":"🍅"}</button>
+    </div>
+  </div>`;
+}
+
+function cardRotinaHtml(r) {
+  const st=gSt(r); const si=stInfo[st]; const prox=proxData(r); const diff=prox?daysDiff(prox):null;
+  const diffTxt=diff!==null?(diff<0?`${Math.abs(diff)}d atrás`:`em ${diff}d`):"";
+  const [cc]=catInfo[r.cat]||["p-gray"];
+  const pomos = r.pomodoros||0;
+  const isActive = PM.taskId===r.id;
+  return `<div class="card card-l" style="border-left-color:${si.c};padding:10px 13px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="flex:1">
+        <div class="iname" style="margin-bottom:3px">${r.nome}</div>
+        <div class="row">${pill(cc,r.cat)}${pill(si.cls,si.l)}${prox?`<span class="imeta" style="color:${si.c}">📅 ${diffTxt}</span>`:""}${pomos>0?`<span class="imeta" style="color:var(--red)">🍅 ${pomos}</span>`:""}</div>
+      </div>
+      <div style="display:flex;gap:5px;align-items:center">
+        <button onclick="startPomo('rotina','${r.id}',this)" style="background:${isActive?"var(--grnD)":"var(--redD)"};color:${isActive?"var(--grn)":"var(--red)"};border:1px solid ${isActive?"var(--grn)":"var(--red)"};border-radius:var(--r-sm);padding:4px 9px;font-size:13px;cursor:pointer" title="${r.nome}">${isActive?"▶":"🍅"}</button>
+        <button class="btn btn-grn btn-sm" onclick="marcarFeita('${r.id}')">✓ Feita</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+window.tapCopo = i => setState(()=>{ D.agua.copos=i<D.agua.copos?i:i+1; D.agua.dataUlt=todayStr(); });
+window.addCopo = () => setState(()=>{ D.agua.copos=Math.min(D.agua.meta,D.agua.copos+1); D.agua.dataUlt=todayStr(); });
+window.goCtx = ctx => { ctxFiltro=ctx; goPage("acoes"); };
+window.toggleAcao = id => setState(()=>{ const a=D.acoes.find(a=>a.id===id); if(a) a.status=a.status==="Pendente"?"Feito":"Pendente"; });
+window.marcarFeita = id => setState(()=>{ const r=D.rotina.find(r=>r.id===id); if(r) r.ultima=todayStr(); });
+
+// ═══════════════════════════════════════════════════════
+// INBOX
+// ═══════════════════════════════════════════════════════
+function renderInbox(ct) {
+  const pending=D.inbox.filter(i=>!i.proc);
+  const proc=D.inbox.filter(i=>i.proc);
+  const vis=showProc?D.inbox:pending;
+  const dests=["Próximas Ações","Projetos","Someday-Maybe","Referência","Lixo"];
+  ct.innerHTML=`
+  <div class="rowb" style="margin-bottom:12px">
+    <button class="btn btn-g btn-sm" onclick="toggleProc()">${showProc?"Ocultar proc.":"Ver proc. ("+proc.length+")"}</button>
+    <button class="btn btn-p btn-sm" onclick="openModal('inbox-new')"><span aria-hidden="true">＋</span> Capturar</button>
+  </div>
+  ${vis.length===0&&!showProc?`<div class="empty"><span aria-hidden="true">✅</span><b>Inbox zerada!</b></div>`:""}
+  ${vis.map(item=>`
+  <div class="card card-l" style="border-left-color:${item.proc?"var(--bord)":"var(--acc)"};opacity:${item.proc?.5:1}">
+    <div class="iname" style="${item.proc?"text-decoration:line-through;color:var(--mid)":""}">${item.desc}</div>
+    <div class="row" style="margin-bottom:${item.proc?0:8}px">
+      ${item.area?pill("p-acc",item.area):""}
+      ${item.energia?`<span class="imeta">⚡ ${item.energia}</span>`:""}
+      <span class="imeta">${fmtDFull(item.data)}</span>
+      ${item.proc?pill("p-grn","✓ "+item.dest):""}
+    </div>
+    ${item.notas&&!item.proc?`<div style="font-size:11px;color:var(--mid);margin-bottom:8px">${item.notas}</div>`:""}
+    ${!item.proc?`
+    <select class="sel" style="font-size:12px;margin-bottom:6px" onchange="procItem('${item.id}',this.value);this.value=''">
+      <option value="">Processar para…</option>
+      ${dests.map(d=>`<option value="${d}">${d}</option>`).join("")}
+    </select>
+    <div class="row">
+      <button class="btn btn-g btn-sm" onclick="openModal('inbox-edit','${item.id}')">Editar</button>
+      <button class="btn btn-red btn-sm" onclick="delInbox('${item.id}')">Excluir</button>
+    </div>`:""}
+  </div>`).join("")}`;
+}
+
+window.toggleProc = () => { showProc=!showProc; render(); };
+window.procItem = (id,dest) => {
+  if(!dest) return;
+  setState(()=>{
+    const it=D.inbox.find(i=>i.id===id); if(!it) return;
+    it.proc=true; it.dest=dest;
+    if(dest==="Próximas Ações") D.acoes.push({id:uid(),acao:it.desc,area:it.area||"",ctx:"",prio:"Média",prazo:"",dur:"",energia:it.energia||"Média",status:"Pendente",notas:it.notas||""});
+    if(dest==="Projetos") D.projetos.push({id:uid(),nome:it.desc,cliente:"",status:"Ativo",prio:"Média",proxAcao:"",prazo:"",pct:0,notas:it.notas||""});
+  });
+};
+window.delInbox = id => setState(()=>{ D.inbox=D.inbox.filter(i=>i.id!==id); });
+
+// ═══════════════════════════════════════════════════════
+// AÇÕES
+// ═══════════════════════════════════════════════════════
+function renderAcoes(ct) {
+  const ctxs=D.contextos||[];
+  const vis = D.acoes.filter(a=>(aFiltro==="Todos"||a.status===aFiltro)&&(ctxFiltro==="Todos"||a.ctx===ctxFiltro))
+    .sort((a,b)=>({Alta:0,Média:1,Baixa:2}[a.prio]??3)-({Alta:0,Média:1,Baixa:2}[b.prio]??3));
+
+  ct.innerHTML=`
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div class="chips" style="margin:0;flex:1">
+      ${["Todos","Pendente","Feito"].map(f=>`<button class="chip${aFiltro===f?" on":""}" onclick="setAF('${f}')">${f}</button>`).join("")}
+    </div>
+    <button class="btn btn-p btn-sm" style="margin-left:8px;flex-shrink:0" onclick="openModal('acao-new')"><span aria-hidden="true">＋</span></button>
+  </div>
+  <div class="chips">
+    ${["Todos",...ctxs].map(c=>`<button class="chip${ctxFiltro===c?" on":""}" onclick="setCtx('${c}')">${c}</button>`).join("")}
+    <button class="chip" onclick="openModal('ctx-mgr')" style="color:var(--ctx);border-color:var(--ctx)"><span aria-hidden="true">⚙️</span></button>
+  </div>
+  ${vis.length===0?`<div class="empty">Nenhuma ação neste filtro</div>`:""}
+  ${vis.map(a=>cardAcaoHtml(a,true)+`<div style="margin-top:-8px;margin-bottom:10px;display:flex;justify-content:flex-end"><button class="btn btn-g btn-sm" style="font-size:10px" onclick="openModal('acao-edit','${a.id}')">···</button></div>`).join("")}`;
+}
+
+window.setAF = f => { aFiltro=f; render(); };
+window.setCtx = c => { ctxFiltro=c; render(); };
+
+// ═══════════════════════════════════════════════════════
+// PROJETOS
+// ═══════════════════════════════════════════════════════
+function renderProjetos(ct) {
+  const sc={Ativo:"var(--grn)","Em espera":"var(--amb)",Concluído:"var(--dim)"};
+  ct.innerHTML=`
+  <div style="text-align:right;margin-bottom:12px">
+    <button class="btn btn-p btn-sm" onclick="openModal('proj-new')"><span aria-hidden="true">＋</span> Novo</button>
+  </div>
+  ${D.projetos.map(p=>`
+  <div class="card card-l" style="border-left-color:${sc[p.status]||"var(--acc)"}">
+    <div class="rowb" style="margin-bottom:6px">
+      <span class="iname" style="margin:0">${p.nome}</span>
+      <div style="display:flex;gap:5px">
+        <button onclick="startPomo('proj','${p.id}',this)" style="background:${PM.taskId===p.id?"var(--grnD)":"var(--redD)"};color:${PM.taskId===p.id?"var(--grn)":"var(--red)"};border:1px solid ${PM.taskId===p.id?"var(--grn)":"var(--red)"};border-radius:var(--r-sm);padding:4px 8px;font-size:13px;cursor:pointer" title="${p.nome}">${PM.taskId===p.id?"▶":"🍅"}</button>
+        <button class="btn btn-g btn-sm" onclick="openModal('proj-edit','${p.id}')">···</button>
+      </div>
+    </div>
+    <div class="row" style="margin-bottom:7px">
+      ${p.cliente&&p.cliente!=="—"?pill("p-acc",p.cliente):""}
+      <span style="font-size:11px;font-weight:600;color:${sc[p.status]||"var(--acc)"}">${p.status}</span>
+      ${p.prazo?`<span class="imeta">📅 ${fmtDFull(p.prazo)}</span>`:""}
+    </div>
+    <div style="font-size:11px;color:var(--mid);margin-bottom:7px">→ ${p.proxAcao||"Sem próxima ação"}</div>
+    <div class="rowb" style="margin-bottom:4px"><span class="imeta">Progresso</span><span style="font-size:11px;font-weight:600;color:var(--acc)">${p.pct}%</span></div>
+    <div class="pbar"><div class="pfill" style="width:${p.pct}%"></div></div>
+  </div>`).join("")}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// ROTINA
+// ═══════════════════════════════════════════════════════
+function renderRotina(ct) {
+  const stMap={"Atrasada":"at","Em breve":"eb","Em dia":"ok","Sem registro":"sem"};
+  const filt=D.rotina.filter(r=>(rotCat==="Todas"||r.cat===rotCat)&&(rotSt==="Todos"||gSt(r)===stMap[rotSt]));
+  const at=filt.filter(r=>gSt(r)==="at"),eb=filt.filter(r=>gSt(r)==="eb"),ok=filt.filter(r=>gSt(r)==="ok"),sr=filt.filter(r=>gSt(r)==="sem");
+  const ord=[...at,...eb,...sr,...ok];
+  ct.innerHTML=`
+  <div class="chips">
+    ${["Todas","Beleza","Casa","Lavanderia","Dogs"].map(c=>`<button class="chip${rotCat===c?" on":""}" onclick="setRC('${c}')">${c}</button>`).join("")}
+  </div>
+  <div class="chips">
+    ${["Todos","Atrasada","Em breve","Em dia","Sem registro"].map(f=>`<button class="chip${rotSt===f?" on":""}" onclick="setRS('${f}')">${f}</button>`).join("")}
+  </div>
+  <div class="row" style="margin-bottom:12px">
+    ${pill("p-red","🔴 "+at.length)}${pill("p-amb","🟡 "+eb.length)}${pill("p-grn","🟢 "+ok.length)}${pill("p-gray","⚪ "+sr.length)}
+  </div>
+  ${ord.map(r=>{
+    const st=gSt(r);const si=stInfo[st];const prox=proxData(r);const diff=prox?daysDiff(prox):null;
+    const diffTxt=diff!==null?(diff<0?`${Math.abs(diff)}d atrás`:`em ${diff}d`):"";
+    const [cc]=catInfo[r.cat]||["p-gray"];
+    return `<div class="card card-l" style="border-left-color:${si.c};padding:10px 13px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1">
+          <div class="iname" style="margin-bottom:3px">${r.nome}</div>
+          <div class="row">${pill(cc,r.cat)}${pill(si.cls,si.l)}<span class="imeta">🔁 ${r.freq}d · ⏱ ${r.tempo}</span>${prox?`<span class="imeta" style="color:${si.c}">📅 ${diffTxt}</span>`:""}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <button class="btn btn-grn btn-sm" onclick="marcarFeita('${r.id}')">✓ Feita</button>
+          <div style="display:flex;gap:4px">
+            <button onclick="startPomo('rotina','${r.id}',this)" style="flex:1;background:${PM.taskId===r.id?"var(--grnD)":"var(--redD)"};color:${PM.taskId===r.id?"var(--grn)":"var(--red)"};border:1px solid ${PM.taskId===r.id?"var(--grn)":"var(--red)"};border-radius:var(--r-sm);padding:4px 7px;font-size:12px;cursor:pointer">${PM.taskId===r.id?"▶":"🍅"}</button>
+            <button class="btn btn-g btn-sm" onclick="openModal('rot-edit','${r.id}')">📅</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join("")}`;
+}
+window.setRC=c=>{rotCat=c;render();};
+window.setRS=f=>{rotSt=f;render();};
+
+// ═══════════════════════════════════════════════════════
+// REVISÃO
+// ═══════════════════════════════════════════════════════
+const revSecs=[
+  {sec:"Limpar",items:["Esvaziar bolsos, bolsa e mochila","Processar papéis físicos","Esvaziar o Inbox completamente","Processar e-mails pendentes"]},
+  {sec:"Atualizar",items:["Revisar calendário da semana passada","Revisar próximas 2 semanas","Atualizar Próximas Ações","Revisar lista de Projetos"]},
+  {sec:"Revisar",items:["Revisar Someday/Maybe","Verificar se projetos têm próxima ação","Checar prazos dos próximos 30 dias","Status da Rotina — tem atrasadas?"]},
+  {sec:"Planejar",items:["Definir 3 prioridades da semana","Alocar tempo para projetos críticos","Criar próximas ações necessárias","Celebrar o que foi concluído! 🎉"]},
+];
+const allRevItens=revSecs.flatMap(s=>s.items);
+
+function renderRevisao(ct) {
+  const chk=D.revisao||[];
+  const done=chk.filter(Boolean).length;
+  const pct=Math.round(done/allRevItens.length*100);
+  let gi=0;
+  ct.innerHTML=`
+  <div class="card" style="margin-bottom:12px">
+    <div class="rowb" style="margin-bottom:6px"><span style="font-weight:600">${done} / ${allRevItens.length}</span><span style="font-size:13px;font-weight:600;color:var(--acc)">${pct}%</span></div>
+    <div class="pbar"><div class="pfill" style="width:${pct}%;background:linear-gradient(90deg,var(--acc),var(--pink))"></div></div>
+    ${done===allRevItens.length?`<div style="margin-top:8px;color:var(--grn);font-weight:600;text-align:center">🎉 Revisão concluída!</div>`:""}
+  </div>
+  <div style="text-align:right;margin-bottom:10px"><button class="btn btn-g btn-sm" onclick="resetRev()">Reiniciar</button></div>
+  ${revSecs.map(s=>`
+  <div style="margin-bottom:14px">
+    <div class="sec">${s.sec}</div>
+    ${s.items.map(item=>{const idx=gi++;const d=chk[idx];return`<div class="ci${d?" done":""}" onclick="togRev(${idx})"><div class="cbox${d?" tk":""}">✓</div><span style="font-size:13px">${item}</span></div>`;}).join("")}
+  </div>`).join("")}
+  <div class="sec">Métricas</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    ${[[D.inbox.filter(i=>!i.proc).length,"Inbox pendente","var(--amb)"],[D.acoes.filter(a=>a.status==="Pendente").length,"Ações pend.","var(--acc)"],[D.projetos.filter(p=>p.status==="Ativo").length,"Proj. ativos","var(--pink)"],[D.rotina.filter(r=>gSt(r)==="at").length,"Rotina atrasada","var(--red)"]].map(([v,l,c])=>`<div class="stat"><div class="v" style="color:${c}">${v}</div><div class="l">${l}</div></div>`).join("")}
+  </div>`;
+}
+window.togRev=i=>setState(()=>{if(!D.revisao)D.revisao=Array(allRevItens.length).fill(false);D.revisao[i]=!D.revisao[i];});
+window.resetRev=()=>setState(()=>{D.revisao=Array(allRevItens.length).fill(false);});
+
+// ═══════════════════════════════════════════════════════
+// MODAL ENGINE
+// ═══════════════════════════════════════════════════════
+window.openModal = (type,id) => { modal={type,id:id||null}; render(); };
+window.closeModal = () => { modal=null; render(); };
+
+function renderModal() {
+  const {type,id} = modal;
+  let body = "";
+  const ctxs = D.contextos||[];
+
+  if(type==="agua-meta"){
+    body=`<div class="modal-title">Meta de água</div>
+    <div class="fld"><label class="lbl">Copos por dia</label><input class="inp" id="m-meta" type="number" min="1" max="20" value="${D.agua.meta}"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveAguaMeta()">Salvar</button></div>`;
+  }
+
+  if(type==="ctx-mgr"){
+    body=`<div class="modal-title">Gerenciar contextos</div>
+    <div style="margin-bottom:10px">
+      ${ctxs.map((c,i)=>`<div class="rowb" style="margin-bottom:6px">${pill("p-ctx",c)}<button class="btn btn-red btn-sm" onclick="delCtx(${i})">Remover</button></div>`).join("")}
+    </div>
+    <div class="fld"><label class="lbl">Novo contexto</label>
+      <div style="display:flex;gap:8px"><input class="inp" id="m-ctx-new" placeholder="@NovoContexto" style="flex:1"><button class="btn btn-p" onclick="addCtx()">Adicionar</button></div>
+    </div>
+    <div style="text-align:right"><button class="btn btn-g" onclick="closeModal()">Fechar</button></div>`;
+  }
+
+  if(type==="inbox-new"||type==="inbox-edit"){
+    const it=id?D.inbox.find(i=>i.id===id):{desc:"",area:"",energia:"Média",notas:""};
+    body=`<div class="modal-title">${id?"Editar item":"Capturar item"}</div>
+    <div class="fld"><label class="lbl">Descrição</label><input class="inp" id="m-desc" value="${it.desc||""}" placeholder="O que está na sua mente?" autofocus></div>
+    <div class="fld"><label class="lbl">Área</label><input class="inp" id="m-area" value="${it.area||""}" placeholder="Trabalho, Casa…"></div>
+    <div class="fld"><label class="lbl">Energia</label><select class="sel" id="m-en">${["Alta","Média","Baixa"].map(v=>`<option${it.energia===v?" selected":""}>${v}</option>`).join("")}</select></div>
+    <div class="fld"><label class="lbl">Notas</label><textarea class="inp" id="m-notas" rows="2" style="resize:vertical">${it.notas||""}</textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveInbox('${id||""}')">Salvar</button></div>`;
+  }
+
+  if(type==="acao-new"||type==="acao-edit"){
+    const it=id?D.acoes.find(a=>a.id===id):{acao:"",area:"",ctx:"",prio:"Média",prazo:"",dur:"",energia:"Média",status:"Pendente"};
+    body=`<div class="modal-title">${id?"Editar ação":"Nova ação"}</div>
+    <div class="fld"><label class="lbl">Ação (verbo + objeto)</label><input class="inp" id="m-acao" value="${it.acao||""}"></div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Área</label><input class="inp" id="m-area" value="${it.area||""}"></div>
+      <div class="fld"><label class="lbl">Contexto</label><select class="sel" id="m-ctx"><option value="">—</option>${ctxs.map(c=>`<option${it.ctx===c?" selected":""}>${c}</option>`).join("")}</select></div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Prioridade</label><select class="sel" id="m-prio">${["Alta","Média","Baixa"].map(v=>`<option${it.prio===v?" selected":""}>${v}</option>`).join("")}</select></div>
+      <div class="fld"><label class="lbl">Prazo</label><input class="inp" id="m-prazo" type="date" value="${it.prazo||""}"></div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Duração</label><input class="inp" id="m-dur" value="${it.dur||""}" placeholder="30min"></div>
+      <div class="fld"><label class="lbl">Energia</label><select class="sel" id="m-en">${["Alta","Média","Baixa"].map(v=>`<option${it.energia===v?" selected":""}>${v}</option>`).join("")}</select></div>
+    </div>
+    <div style="display:flex;justify-content:space-between">
+      ${id?`<button class="btn btn-red btn-sm" onclick="delAcao('${id}')">Excluir</button>`:"<span></span>"}
+      <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveAcao('${id||""}')">Salvar</button></div>
+    </div>`;
+  }
+
+  if(type==="proj-new"||type==="proj-edit"){
+    const it=id?D.projetos.find(p=>p.id===id):{nome:"",cliente:"",status:"Ativo",prio:"Média",proxAcao:"",prazo:"",pct:0};
+    body=`<div class="modal-title">${id?"Editar projeto":"Novo projeto"}</div>
+    <div class="fld"><label class="lbl">Nome</label><input class="inp" id="m-nome" value="${it.nome||""}"></div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Cliente</label><input class="inp" id="m-cli" value="${it.cliente||""}"></div>
+      <div class="fld"><label class="lbl">Status</label><select class="sel" id="m-status">${["Ativo","Em espera","Concluído"].map(v=>`<option${it.status===v?" selected":""}>${v}</option>`).join("")}</select></div>
+    </div>
+    <div class="fld"><label class="lbl">Próxima ação</label><input class="inp" id="m-proxAcao" value="${it.proxAcao||""}"></div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Prazo</label><input class="inp" id="m-prazo" type="date" value="${it.prazo||""}"></div>
+      <div class="fld"><label class="lbl">% Concluído</label><input class="inp" id="m-pct" type="number" min="0" max="100" value="${it.pct||0}"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between">
+      ${id?`<button class="btn btn-red btn-sm" onclick="delProj('${id}')">Excluir</button>`:"<span></span>"}
+      <div style="display:flex;gap:8px"><button class="btn btn-g" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveProj('${id||""}')">Salvar</button></div>
+    </div>`;
+  }
+
+  if(type==="export-cfg"){
+    const cfgData = btoa(unescape(encodeURIComponent(JSON.stringify({
+      sheetId: CFG.sheetId,
+      apiKey: CFG.apiKey,
+      clientId: CFG.clientId
+    }))));
+    const url = window.location.origin + window.location.pathname + "?cfg=" + cfgData;
+    body=`<div class="modal-title">📲 Configurar outro dispositivo</div>
+    <p style="font-size:12px;color:var(--mid);margin-bottom:14px;line-height:1.6">Escaneie o QR Code com o celular para abrir o app já com as configurações preenchidas. Você ainda precisará fazer o login com o Google no celular.</p>
+    <div style="text-align:center;margin-bottom:14px">
+      <canvas id="qr-canvas" style="border-radius:8px;background:#fff;padding:8px"></canvas>
+    </div>
+    <div style="background:var(--surfH);border-radius:var(--r-sm);padding:10px;margin-bottom:14px;word-break:break-all">
+      <div class="lbl" style="margin-bottom:4px">Ou copie o link</div>
+      <div style="font-size:10px;color:var(--acc);font-family:monospace" id="cfg-url">${url}</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-g" style="flex:1" onclick="navigator.clipboard.writeText(document.getElementById('cfg-url').textContent);showToast('Link copiado!')">📋 Copiar link</button>
+      <button class="btn btn-p" style="flex:1" onclick="closeModal()">Fechar</button>
+    </div>`;
+  }
+
+  if(type==="pomo-cfg"){
+    body=`<div class="modal-title">⚙️ Configurar Pomodoro</div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Foco (min)</label><input class="inp" id="p-work" type="number" min="1" max="90" value="${POMO_CFG.work}"></div>
+      <div class="fld"><label class="lbl">Pausa curta (min)</label><input class="inp" id="p-short" type="number" min="1" max="30" value="${POMO_CFG.shortBreak}"></div>
+    </div>
+    <div class="g2">
+      <div class="fld"><label class="lbl">Pausa longa (min)</label><input class="inp" id="p-long" type="number" min="1" max="60" value="${POMO_CFG.longBreak}"></div>
+      <div class="fld"><label class="lbl">Pomodoros p/ pausa longa</label><input class="inp" id="p-after" type="number" min="2" max="8" value="${POMO_CFG.longAfter}"></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="lbl" style="margin-bottom:6px">Testar alarmes</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-g btn-sm" style="flex:1" onclick="playAlarmWork()">🍅 Testar foco</button>
+        <button class="btn btn-g btn-sm" style="flex:1" onclick="playAlarmBreak()">☕ Testar pausa</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="savePomoCfg()">Salvar</button>
+    </div>`;
+  }
+
+  if(type==="rot-edit"){
+    const it=D.rotina.find(r=>r.id===id);
+    const prox=it&&it.ultima?(()=>{const d=new Date(it.ultima+"T00:00:00");d.setDate(d.getDate()+it.freq);return d.toISOString().split("T")[0];})():null;
+    body=`<div class="modal-title">${it?it.nome:"Editar data"}</div>
+    <div class="fld"><label class="lbl">Última realização</label><input class="inp" id="m-ult" type="date" value="${it&&it.ultima||""}" oninput="updRotPreview('${id}')"></div>
+    <div id="rot-prox" style="font-size:12px;color:var(--mid);margin-bottom:14px">A cada ${it?it.freq:0}d · Próxima: <b>${fmtDFull(prox)}</b></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-g" onclick="closeModal()">Cancelar</button><button class="btn btn-p" onclick="saveRotDate('${id}')">Salvar</button></div>`;
+  }
+
+  // inject overlay
+  const ov = document.createElement("div");
+  ov.className = "overlay";
+  ov.onclick = e => { if(e.target===ov) closeModal(); };
+  ov.innerHTML = `<div class="modal"><div class="modal-handle"></div>${body}</div>`;
+  document.getElementById("app").appendChild(ov);
+  // Render QR code if export modal
+  if(type==="export-cfg"){
+    setTimeout(()=>{
+      const canvas = document.getElementById("qr-canvas");
+      if(canvas){
+        const url = document.getElementById("cfg-url")?.textContent||"";
+        try{ renderQRToCanvas(url, canvas, 200); } catch(e){ console.warn("QR error",e); }
+      }
+    }, 50);
+  }
+}
+
+// save handlers
+window.saveAguaMeta = () => { const v=parseInt(document.getElementById("m-meta")?.value)||8; setState(()=>{D.agua.meta=v;}); };
+window.addCtx = () => { const v=document.getElementById("m-ctx-new")?.value?.trim(); if(!v) return; setState(()=>{D.contextos.push(v.startsWith("@")?v:"@"+v);}); modal={type:"ctx-mgr"}; };
+window.delCtx = i => { setState(()=>{D.contextos.splice(i,1);}); modal={type:"ctx-mgr"}; };
+window.saveInbox = id => {
+  const desc=document.getElementById("m-desc")?.value?.trim(); if(!desc) return;
+  const o={desc,area:document.getElementById("m-area")?.value||"",energia:document.getElementById("m-en")?.value||"Média",notas:document.getElementById("m-notas")?.value||""};
+  setState(()=>{ if(id){const it=D.inbox.find(i=>i.id===id);if(it)Object.assign(it,o);}else D.inbox.push({id:uid(),data:todayStr(),proc:false,dest:"",...o}); });
+};
+window.saveAcao = id => {
+  const acao=document.getElementById("m-acao")?.value?.trim(); if(!acao) return;
+  const o={acao,area:document.getElementById("m-area")?.value||"",ctx:document.getElementById("m-ctx")?.value||"",prio:document.getElementById("m-prio")?.value||"Média",prazo:document.getElementById("m-prazo")?.value||"",dur:document.getElementById("m-dur")?.value||"",energia:document.getElementById("m-en")?.value||"Média"};
+  setState(()=>{ if(id){const it=D.acoes.find(a=>a.id===id);if(it)Object.assign(it,o);}else D.acoes.push({id:uid(),status:"Pendente",...o}); });
+};
+window.delAcao = id => setState(()=>{ D.acoes=D.acoes.filter(a=>a.id!==id); });
+window.saveProj = id => {
+  const nome=document.getElementById("m-nome")?.value?.trim(); if(!nome) return;
+  const o={nome,cliente:document.getElementById("m-cli")?.value||"",status:document.getElementById("m-status")?.value||"Ativo",prio:"Média",proxAcao:document.getElementById("m-proxAcao")?.value||"",prazo:document.getElementById("m-prazo")?.value||"",pct:Number(document.getElementById("m-pct")?.value||0)};
+  setState(()=>{ if(id){const it=D.projetos.find(p=>p.id===id);if(it)Object.assign(it,o);}else D.projetos.push({id:uid(),...o}); });
+};
+window.delProj = id => setState(()=>{ D.projetos=D.projetos.filter(p=>p.id!==id); });
+window.updRotPreview = id => {
+  const v=document.getElementById("m-ult")?.value;
+  const el=document.getElementById("rot-prox"); if(!el) return;
+  const it=D.rotina.find(r=>r.id===id); if(!it) return;
+  const prox=v?(()=>{const d=new Date(v+"T00:00:00");d.setDate(d.getDate()+it.freq);return d.toISOString().split("T")[0];})():null;
+  el.innerHTML=`A cada ${it.freq}d · Próxima: <b>${fmtDFull(prox)}</b>`;
+};
+window.saveRotDate = id => { const v=document.getElementById("m-ult")?.value||null;
+window.savePomoCfg = () => {
+  POMO_CFG.work      = parseInt(document.getElementById('p-work')?.value)||25;
+  POMO_CFG.shortBreak= parseInt(document.getElementById('p-short')?.value)||5;
+  POMO_CFG.longBreak = parseInt(document.getElementById('p-long')?.value)||15;
+  POMO_CFG.longAfter = parseInt(document.getElementById('p-after')?.value)||4;
+  savePromoCfg(); closeModal(); showToast('Configurações salvas!');
+}; setState(()=>{const r=D.rotina.find(r=>r.id===id);if(r)r.ultima=v;}); };
+
+// ═══════════════════════════════════════════════════════
+// SETUP SCREEN
+// ═══════════════════════════════════════════════════════
+function renderSetup() {
+  document.getElementById("app").innerHTML = `
+  <div class="setup">
+    <div style="font-size:28px;margin-bottom:8px">⚙️</div>
+    <h2>Configuração inicial</h2>
+    <p>Siga os passos abaixo para conectar o app ao seu Google Sheets. Você faz isso uma única vez e funciona em qualquer dispositivo.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Criar uma planilha no Google Sheets</div>
+        <div class="step-desc">Abra <a href="https://sheets.new" target="_blank" style="color:var(--acc)">sheets.new</a> e crie uma nova planilha. Crie as seguintes abas (guias): <code>Inbox</code> <code>Ações</code> <code>Projetos</code> <code>Rotina</code> <code>Config</code><br><br>
+        Copie o <b>ID da planilha</b> da URL (a parte entre <code>/d/</code> e <code>/edit</code>).</div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Criar um projeto no Google Cloud</div>
+        <div class="step-desc">Acesse <a href="https://console.cloud.google.com" target="_blank" style="color:var(--acc)">console.cloud.google.com</a> → Criar Projeto → ative a <b>Google Sheets API</b> → vá em <b>Credenciais</b> e crie uma <b>Chave de API</b> (API Key) e um <b>ID de cliente OAuth 2.0</b> do tipo "Aplicativo da Web". Adicione esta URL como origem autorizada: <code>${window.location.origin}</code></div>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Cole as credenciais abaixo</div>
+        <div class="step-desc">Preencha os campos e clique em Salvar. O app vai pedir autorização do Google e você estará pronto!</div>
+      </div>
+    </div>
+
+    <div class="fld"><label class="lbl">ID da Planilha</label><input class="inp" id="s-sheet" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" value="${CFG.sheetId||""}"></div>
+    <div class="fld"><label class="lbl">Chave de API (API Key)</label><input class="inp" id="s-key" placeholder="AIzaSy..." value="${CFG.apiKey||""}"></div>
+    <div class="fld"><label class="lbl">Client ID OAuth 2.0</label><input class="inp" id="s-client" placeholder="xxxx.apps.googleusercontent.com" value="${CFG.clientId||""}"></div>
+
+    <button class="btn btn-p" style="width:100%;justify-content:center" onclick="saveSetup()">Salvar e Autorizar</button>
+    ${CFG.sheetId?`<button class="btn btn-g" style="width:100%;justify-content:center;margin-top:10px" onclick="skipSetup()">Usar sem sincronização (local)</button>`:""}
+  </div>`;
+}
+
+window.saveSetup = () => {
+  const sheetId = document.getElementById("s-sheet")?.value?.trim();
+  const apiKey  = document.getElementById("s-key")?.value?.trim();
+  const clientId= document.getElementById("s-client")?.value?.trim();
+  if (!sheetId||!apiKey||!clientId) { showToast("Preencha todos os campos",true); return; }
+  CFG = {...CFG, sheetId, apiKey, clientId };
+  localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
+  signInGoogle();
+};
+
+window.skipSetup = () => {
+  // use with partial config — read-only from sheets, local writes
+  render();
+};
+
+
+
+// ═══════════════════════════════════════════════════════
+// ALARM AUDIO ENGINE (Web Audio API — sem arquivos externos)
+// ═══════════════════════════════════════════════════════
+let _audioCtx = null;
+
+function getAudioCtx(){
+  if(!_audioCtx) _audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  // Resume se suspenso (política de autoplay)
+  if(_audioCtx.state === "suspended") _audioCtx.resume();
+  return _audioCtx;
+}
+
+// Toca uma nota simples
+function playTone(freq, startTime, duration, vol=0.5, type="sine"){
+  const ctx = getAudioCtx();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(vol, startTime + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - 0.01);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
+}
+
+// 🍅 Alarme de FOCO concluído — 3 bipes ascendentes triunfantes
+function playAlarmWork(){
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  // Acorde crescente: três notas em sequência
+  const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+  notes.forEach((freq, i) => {
+    playTone(freq, t + i*0.22, 0.3, 0.55, "triangle");
+  });
+  // Reforço grave
+  setTimeout(() => {
+    const t2 = getAudioCtx().currentTime;
+    playTone(261.63, t2, 0.5, 0.35, "sine"); // C4
+    playTone(783.99, t2 + 0.1, 0.6, 0.4, "triangle"); // G5
+  }, 700);
+}
+
+// ☕ Alarme de PAUSA concluída — 2 bipes suaves descendentes
+function playAlarmBreak(){
+  const ctx = getAudioCtx();
+  const t = ctx.currentTime;
+  // Dois bipes gentis descendentes
+  playTone(659.25, t,       0.25, 0.4, "sine"); // E5
+  playTone(523.25, t + 0.3, 0.35, 0.4, "sine"); // C5
+  // Eco suave
+  setTimeout(() => {
+    const t2 = getAudioCtx().currentTime;
+    playTone(523.25, t2, 0.4, 0.25, "sine");
+  }, 800);
+}
+
+// Unlock AudioContext on first user interaction (required by browsers)
+function unlockAudio(){
+  try { getAudioCtx(); } catch(e){}
+  document.removeEventListener("touchstart", unlockAudio);
+  document.removeEventListener("click", unlockAudio);
+}
+document.addEventListener("touchstart", unlockAudio, {once:true});
+document.addEventListener("click", unlockAudio, {once:true});
+
+
+// ═══════════════════════════════════════════════════════
+// MINIMAL QR CODE GENERATOR (no external deps)
+// Based on qrcode-generator by Kazuhiko Arase (MIT)
+// ═══════════════════════════════════════════════════════
+var QRCode=(function(){function a(a,b){if(void 0===a.length)throw new Error(a.length);this.typeNumber=a,this.errorCorrectLevel=b,this.modules=null,this.moduleCount=0,this.dataCache=null,this.dataList=[]}function b(a,b){this.totalCount=a,this.dataCount=b}function c(){this.buffer=[],this.length=0}function d(){return"undefined"!=typeof CanvasRenderingContext2D}function e(){var a=!1;try{a=!!window.CanvasRenderingContext2D}catch(b){}return a}var f={PATTERN000:0,PATTERN001:1,PATTERN010:2,PATTERN011:3,PATTERN100:4,PATTERN101:5,PATTERN110:6,PATTERN111:7},g={L:1,M:0,Q:3,H:2},h={MODE_NUMBER:1,MODE_ALPHA_NUM:2,MODE_8BIT_BYTE:4,MODE_KANJI:8},i=function(a,b){for(var c=0,d=a,e=0;e<b;e++){0!=(8388608&d)&&(c^=285),d<<=1}return c},j=function(){for(var a=[],b=0;b<8;b++){a.push([]);for(var c=0;c<8;c++)a[b].push(i(b>c?b:c,8)^(b>c?i(c,8-b+c):i(b,8-b+c)));return a}return a}(),k=function(a){for(var b=[],c=1,d=0;d<a;d++){b.push([]);for(var e=0;e<a;e++)b[d].push(!1)}return b},l=function(){function a(){for(var a=[],b=0;b<256;b++)a.push(b<8?i(b,8):0);for(var b=0;b<256;b++)a[b]=i(1,b);return a}function b(){for(var a=[],b=0;b<256;b++)a.push(0);a[0]=1;for(var b=1;b<256;b++)a[b]=a[b-1]*2,a[b]>=256&&(a[b]^=285);return a}var c=[],d=[];return{glog:function(a){if(a<1)throw new Error("glog("+a+")");return 0===c.length&&(c=a()),c[a]},gexp:function(a){for(;a<0;)a+=255;for(;a>=256;)a-=255;return 0===d.length&&(d=b()),d[a]}}}(),m=function(a,b){var c=new Array(b),d=a-1,e=0;c[0]=1;for(var f=0;f<a;f++){c=new Array(b+1);for(var g=0;g<b+1;g++)c[g]=0;for(var g=0;g<b;g++)c[g]^=l.gexp(l.glog(c[g])+d);d=(d+1)%255}return c};a.prototype={addData:function(a){var b=new o(a);this.dataList.push(b),this.dataCache=null},isDark:function(a,b){if(a<0||this.moduleCount<=a||b<0||this.moduleCount<=b)throw new Error(a+","+b);return this.modules[a][b]},getModuleCount:function(){return this.moduleCount},make:function(){if(this.typeNumber<1||this.typeNumber>40){var a=1;for(a=1;a<40;a++){for(var b=[],c=0;c<this.dataList.length;c++){var d=this.dataList[c];b.push(d)}var e=n(a,this.errorCorrectLevel,b);if(e.length<=r[a][this.errorCorrectLevel])break}this.typeNumber=a}this.makeImpl(!1,this.getBestMaskPattern())},makeImpl:function(a,b){this.moduleCount=4*this.typeNumber+17,this.modules=k(this.moduleCount);for(var c=0;c<this.moduleCount;c++)for(var d=0;d<this.moduleCount;d++)this.modules[c][d]=null;this.setupPositionProbePattern(0,0),this.setupPositionProbePattern(this.moduleCount-7,0),this.setupPositionProbePattern(0,this.moduleCount-7),this.setupPositionAdjustPattern(),this.setupTimingPattern(),this.setupTypeInfo(a,b),this.typeNumber>=7&&this.setupTypeNumber(a);var e=null;e=this.dataCache==null?this.dataCache=n(this.typeNumber,this.errorCorrectLevel,this.dataList):e;this.mapData(e,b)},setupPositionProbePattern:function(a,b){for(var c=-1;c<=7;c++)if(!(a+c<=-1||this.moduleCount<=a+c))for(var d=-1;d<=7;d++)a+c>=0&&a+c<this.moduleCount&&b+d>=0&&b+d<this.moduleCount&&(this.modules[a+c][b+d]=0<=c&&c<=6&&(0==d||6==d)||0<=d&&d<=6&&(0==c||6==c)||2<=c&&c<=4&&2<=d&&d<=4)},getModuleCount:function(){return this.moduleCount},getBestMaskPattern:function(){for(var a=0,b=0,c=0;c<8;c++){this.makeImpl(!0,c);var d=p.getLostPoint(this);(0==c||a>d)&&(a=d,b=c)}return b},setupTimingPattern:function(){for(var a=8;a<this.moduleCount-8;a++)null==this.modules[a][6]&&(this.modules[a][6]=0==a%2);for(var b=8;b<this.moduleCount-8;b++)null==this.modules[6][b]&&(this.modules[6][b]=0==b%2)},setupPositionAdjustPattern:function(){for(var a=q.getPatternPosition(this.typeNumber),b=0;b<a.length;b++)for(var c=0;c<a.length;c++){var d=a[b],e=a[c];if(null==this.modules[d][e])for(var f=-2;f<=2;f++)for(var g=-2;g<=2;g++)this.modules[d+f][e+g]=-2==f||2==f||-2==g||2==g||0==f&&0==g}},setupTypeNumber:function(a){for(var b=s.getBCHTypeNumber(this.typeNumber),c=0;c<18;c++){var d=!a&&1==(b>>c&1);this.modules[Math.floor(c/3)][c%3+this.moduleCount-8-3]=d}for(var c=0;c<18;c++){var d=!a&&1==(b>>c&1);this.modules[c%3+this.moduleCount-8-3][Math.floor(c/3)]=d}},setupTypeInfo:function(a,b){for(var c=g.M,d=s.getBCHTypeInfo(c<<3|b),e=0;e<15;e++){var f=!a&&1==(d>>e&1);e<6?this.modules[e][8]=f:e<8?this.modules[e+1][8]=f:this.modules[this.moduleCount-15+e][8]=f}for(var e=0;e<15;e++){var f=!a&&1==(d>>e&1);e<8?this.modules[8][this.moduleCount-e-1]=f:e<9?this.modules[8][15-e-1+1]=f:this.modules[8][15-e-1]=f}this.modules[this.moduleCount-8][8]=!a},mapData:function(a,b){for(var c=-1,d=this.moduleCount-1,e=7,g=0,h=this.moduleCount-1;h>0;h-=2){6==h&&h--;for(;;){for(var i=0;i<2;i++){if(null==this.modules[d][h-i]){var j=!1;g<a.length&&(j=1==(a[g]>>>e&1));var k=f.PATTERN000==b?0==(d+h)%2:f.PATTERN001==b?0==d%2:f.PATTERN010==b?0==h%3:f.PATTERN011==b?0==(d+h)%3:f.PATTERN100==b?0==Math.floor(d/2+h/3)%2:f.PATTERN101==b?0==(d*h)%2+(d*h)%3:f.PATTERN110==b?0==((d*h)%2+(d*h)%3)%2:0==((d+h)%2+(d*h)%3)%2;k&&(j=!j),this.modules[d][h-i]=j,e--,-1==e&&(g++,e=7)}}if(d+=c,d<0||this.moduleCount<=d){d-=c,c=-c;break}}}}};var n=function(a,c,d){var e=b.getRSBlocks(a,c),f=new r$1;for(var g=0;g<d.length;g++){var h=d[g];f.put(h.mode,4),f.put(h.getLength(),s.getLengthInBits(h.mode,a)),h.write(f)}for(var i=0,g=0;g<e.length;g++)i+=e[g].dataCount;if(f.getLengthInBits()>8*i)throw new Error("code length overflow. ("+f.getLengthInBits()+">"+8*i+")");f.getLengthInBits()+4<=8*i&&f.put(0,4);for(;0!=f.getLengthInBits()%8;)f.putBit(!1);for(;;){if(f.getLengthInBits()>=8*i)break;f.put(t.PAD0,8);if(f.getLengthInBits()>=8*i)break;f.put(t.PAD1,8)}return u(e,f)},o=function(a){this.mode=h.MODE_8BIT_BYTE,this.data=a};o.prototype={getLength:function(){return this.data.length},write:function(a){for(var b=0;b<this.data.length;b++)a.put(this.data.charCodeAt(b),8)}};var p={getLostPoint:function(a){for(var b=a.getModuleCount(),c=0,d=0;d<b;d++){for(var e=0;e<b;e++){for(var f=0,g=-1;g<=1;g++)if(!(d+g<0||b<=d+g))for(var h=-1;h<=1;h++)e+h<0||b<=e+h||(a.isDark(d,g+d)==a.isDark(d+g,e+h)&&f++);f>5&&(c+=3+f-5)}for(var d=0;d<b-1;d++)for(var e=0;e<b-1;e++){var i=0;a.isDark(d,e)&&i++,a.isDark(d+1,e)&&i++,a.isDark(d,e+1)&&i++,a.isDark(d+1,e+1)&&i++,(0==i||4==i)&&(c+=3)}}for(var d=0;d<b;d++){for(var e=0;e<b-6;e++)a.isDark(d,e)&&!a.isDark(d,e+1)&&a.isDark(d,e+2)&&a.isDark(d,e+3)&&a.isDark(d,e+4)&&!a.isDark(d,e+5)&&a.isDark(d,e+6)&&(c+=40)}for(var e=0;e<b;e++){for(var d=0;d<b-6;d++)a.isDark(d,e)&&!a.isDark(d+1,e)&&a.isDark(d+2,e)&&a.isDark(d+3,e)&&a.isDark(d+4,e)&&!a.isDark(d+5,e)&&a.isDark(d+6,e)&&(c+=40)}var j=0;for(var e=0;e<b;e++)for(var d=0;d<b;d++)a.isDark(d,e)&&j++;var k=Math.abs(100*j/b/b-50)/5;return c+=10*k,c}},q={getPatternPosition:function(a){return[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]][a-1]}},r=[0,[],[6,18],[9,26],[10,18],[11,22],[12,22],[13,26],[14,26],[15,26],[16,26],[17,30],[18,22],[19,22],[20,26],[21,26],[22,26],[23,28],[24,22],[25,22],[26,26],[27,26],[28,26],[29,28],[30,26],[31,28],[32,26],[33,26],[34,28],[35,26],[36,28],[37,28],[38,28],[39,28],[40,28]],r$1=c;c.prototype={getLengthInBits:function(){return this.length},put:function(a,b){for(var c=0;c<b;c++)this.putBit(1==(a>>>b-c-1&1))},putBit:function(a){var b=Math.floor(this.length/8);this.buffer.length<=b&&this.buffer.push(0),a&&(this.buffer[b]|=128>>>this.length%8),this.length++}};var s={getBCHTypeInfo:function(a){for(var b=a<<10;s.getBCHDigit(b)-s.getBCHDigit(1335)>=0;)b^=1335<<s.getBCHDigit(b)-s.getBCHDigit(1335);return(a<<10|b)^21522},getBCHTypeNumber:function(a){for(var b=a<<12;s.getBCHDigit(b)-s.getBCHDigit(7973)>=0;)b^=7973<<s.getBCHDigit(b)-s.getBCHDigit(7973);return a<<12|b},getBCHDigit:function(a){for(var b=0;0!=a;)b++,a>>>=1;return b},getLengthInBits:function(a,b){if(1<=b&&b<10){if(a==h.MODE_NUMBER)return 10;if(a==h.MODE_ALPHA_NUM)return 9;if(a==h.MODE_8BIT_BYTE)return 8;if(a==h.MODE_KANJI)return 8}else if(b<27){if(a==h.MODE_NUMBER)return 12;if(a==h.MODE_ALPHA_NUM)return 11;if(a==h.MODE_8BIT_BYTE)return 16;if(a==h.MODE_KANJI)return 10}else if(b<41){if(a==h.MODE_NUMBER)return 14;if(a==h.MODE_ALPHA_NUM)return 13;if(a==h.MODE_8BIT_BYTE)return 16;if(a==h.MODE_KANJI)return 12}throw new Error("type:"+a+"/length:"+b)},lost_point:function(a){return p.getLostPoint(a)}};b.getRSBlocks=function(a,c){var d=b.getRsBlockTable(a,c);if(void 0===d)throw new Error("bad rs block @ typeNumber:"+a+"/errorCorrectLevel:"+c);var e=d.length/3,f=[];for(var g=0;g<e;g++)for(var h=d[3*g+0],i=d[3*g+1],j=d[3*g+2],k=0;k<h;k++)f.push(new b(i,j));return f};b.getRsBlockTable=function(a,b){switch(b){case g.L:return[1,26,19,1,26,16,1,26,13,1,26,9,1,44,34,1,44,28,1,44,22,1,44,16,1,60,46,1,60,38,1,58,36,1,64,40,2,46,36,1,36,16,2,54,32,1,54,32,2,48,40,2,60,50,2,72,60,1,65,52,2,80,66,3,81,67,2,83,69,1,57,43,2,87,73,1,57,43,3,97,81,2,97,81,2,89,75,2,89,75,4,111,95,2,111,95,2,89,75,4,122,106,3,122,97,4,106,91,5,114,99,6,114,99,4,130,115,6,130,116,1,106,91,7,130,115,8,122,107,10,135,120,3,130,115,3,130,115,4,130,115,4,130,115][3*(a-1)*b.L+2-2*i];case g.M:return[1,26,16,1,26,19,1,26,13,1,26,9,1,44,28,1,44,22,1,44,16,1,44,22,2,46,36,2,46,32,4,36,16,2,36,16,2,36,16,2,36,22,2,54,32,4,54,40,4,43,24,4,50,36,6,36,16,6,36,22,3,50,28,4,52,32,7,55,28,10,55,30,4,52,32,4,65,38,6,65,38,7,65,44,8,65,44,6,73,38,8,73,38,8,73,38,7,73,38,9,82,38,8,82,36,9,82,40,9,82,40,11,82,44,12,82,44,10,94,40,10,94,40,11,94,40,10,106,40,13,86,42,10,86,42,10,106,46,13,86,42][3*(a-1)*b.M+2-2*i];case g.Q:return[1,26,13,1,26,22,2,26,22,2,26,16,2,44,28,4,36,22,2,52,24,4,52,32,2,30,16,4,40,24,4,32,18,4,44,26,6,36,22,4,52,22,6,36,22,8,46,28,8,46,28,8,43,24,8,46,22,8,46,24,3,54,28,4,54,26,7,54,26,11,60,36,11,60,28,11,60,28,7,66,28,8,66,28,11,66,26,3,70,26,4,70,26,11,74,36,12,74,26,11,74,26,3,74,26,11,74,26,3,74,26,4,74,26,11,74,26,3,86,26,3,86,26,11,86,26,3,86,26,12,88,28,12,88,28,11,88,28,12,88,28,3,90,28,3,90,28,12,90,28,3,90,28][3*(a-1)*b.Q+2-2*i];case g.H:return[1,26,9,1,26,16,2,20,13,4,24,13,2,32,16,4,28,14,4,26,13,4,26,13,6,26,13,6,30,15,8,16,8,4,22,11,8,28,16,11,26,14,5,24,11,11,24,14,11,28,15,16,24,13,16,26,14,3,26,13,23,26,14,26,26,14,12,22,11,10,24,12,14,28,16,10,28,12,14,30,14,8,24,11,8,24,11,8,24,11,8,26,12,8,26,12,8,26,12,8,28,12,10,26,14,10,26,14,10,26,14,12,26,14,12,30,16,14,30,16,12,30,16,12,30,16,14,30,16,14,30,16,12,30,16,12,30,16,14,30,16,14,30,16,16,30,16,16,30,16,18,30,16,18,30,16][3*(a-1)*b.H+2-2*i]}};var t={PAD0:236,PAD1:17},u=function(a,b){for(var c=0,d=0,e=0,f=[],g=[],h=0;h<a.length;h++){var i=a[h].dataCount,j=a[h].totalCount-i;d=Math.max(d,i),e=Math.max(e,j),f.push([]),g.push([])}for(var h=0;h<a.length;h++){var k=b;for(var l=0;l<f[h].length;l++)f[h].push(k.buffer[l+c]);c+=f[h].length}var n=0;for(var h=0;h<d;h++)for(var k=0;k<a.length;k++)h<f[k].length&&(n++);var o=[],p=0;for(var l=0;l<d;l++)for(var h=0;h<a.length;h++)l<f[h].length&&o.push(f[h][l]);for(var l=0;l<e;l++)for(var h=0;h<a.length;h++)l<g[h].length&&o.push(g[h][l]);return o};return{createQRCode:function(a,b){var c=new a$1(a,b||g.M);return c.make(),c}}})();
+
+// Helper: render QR to canvas
+function renderQRToCanvas(text, canvas, size) {
+  const qr = QRCode.createQRCode(text);
+  const count = qr.getModuleCount();
+  const cell = Math.floor(size / count);
+  const margin = Math.floor((size - cell * count) / 2);
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, size, size);
+  ctx.fillStyle = "#000000";
+  for (let r = 0; r < count; r++) {
+    for (let c2 = 0; c2 < count; c2++) {
+      if (qr.isDark(r, c2)) {
+        ctx.fillRect(margin + c2 * cell, margin + r * cell, cell, cell);
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// POMODORO ENGINE
+// ═══════════════════════════════════════════════════════
+const POMO_CFG_KEY = "gtd_pomo_cfg";
+let POMO_CFG = { work:25, shortBreak:5, longBreak:15, longAfter:4 };
+try { POMO_CFG = {...POMO_CFG,...JSON.parse(localStorage.getItem(POMO_CFG_KEY)||"{}")}; } catch {}
+function savePromoCfg(){ localStorage.setItem(POMO_CFG_KEY, JSON.stringify(POMO_CFG)); }
+
+// PM = Pomodoro Machine state
+const PM = {
+  taskId: null,       // ID da tarefa ativa
+  taskType: null,     // "acao" | "rotina" | "proj"
+  taskName: "",
+  phase: "idle",      // "idle" | "work" | "break" | "longBreak"
+  elapsed: 0,         // segundos decorridos nesta fase
+  totalSecs: 0,       // total da fase
+  roundsDone: 0,      // pomodoros completos nesta sessão
+  panelOpen: false,
+  _timer: null,
+};
+
+function pomoTotalSecs(){
+  if(PM.phase==="work") return POMO_CFG.work*60;
+  if(PM.phase==="longBreak") return POMO_CFG.longBreak*60;
+  return POMO_CFG.shortBreak*60;
+}
+
+function pomoSecsLeft(){ return Math.max(0, PM.totalSecs - PM.elapsed); }
+
+function pomoFmt(s){ const m=Math.floor(s/60); const ss=s%60; return `${String(m).padStart(2,"0")}:${String(ss).padStart(2,"0")}`; }
+
+function startPomo(type, id, btn){
+  // If same task, just open panel
+  if(PM.taskId===id){ PM.panelOpen=true; renderPomoPanel(); return; }
+  // If different task running, ask
+  if(PM.phase!=="idle"){
+    if(!confirm("Há um pomodoro em andamento. Trocar de tarefa?")) return;
+    pomoStop(false);
+  }
+  const item = type==="acao"?D.acoes.find(a=>a.id===id):type==="rotina"?D.rotina.find(r=>r.id===id):D.projetos.find(p=>p.id===id);
+  if(!item) return;
+  PM.taskId=id; PM.taskType=type; PM.taskName=type==="acao"?item.acao:type==="rotina"?item.nome:item.nome;
+  PM.phase="work"; PM.elapsed=0; PM.totalSecs=POMO_CFG.work*60; PM.roundsDone=0; PM.panelOpen=true;
+  pomoTick();
+  renderPomoFab(); renderPomoPanel();
+}
+window.startPomo = startPomo;
+
+function pomoTick(){
+  clearInterval(PM._timer);
+  PM._timer = setInterval(()=>{
+    PM.elapsed++;
+    if(PM.elapsed>=PM.totalSecs){
+      pomoPhaseComplete();
+    } else {
+      renderPomoPanel();
+      renderPomoFab();
+    }
+  },1000);
+}
+
+function pomoPhaseComplete(){
+  clearInterval(PM._timer);
+  if(PM.phase==="work"){
+    PM.roundsDone++;
+    // Play work-complete alarm 🍅
+    playAlarmWork();
+    // Save pomodoro count to item
+    setState(()=>{
+      const item = PM.taskType==="acao"?D.acoes.find(a=>a.id===PM.taskId):PM.taskType==="rotina"?D.rotina.find(r=>r.id===PM.taskId):D.projetos.find(p=>p.id===PM.taskId);
+      if(item){
+        item.pomodoros=(item.pomodoros||0)+1;
+        if(!item.pomoHist) item.pomoHist=[];
+        item.pomoHist.push({data:todayStr(),hora:new Date().toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})});
+      }
+    });
+    // Vibrate
+    if(navigator.vibrate) navigator.vibrate([200,100,200]);
+    // Notification
+    if(Notification.permission==="granted") new Notification("🍅 Pomodoro completo!",{body:`${PM.taskName} — Hora da pausa!`,icon:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍅</text></svg>"});
+    // Start break
+    const isLong = PM.roundsDone%POMO_CFG.longAfter===0;
+    PM.phase=isLong?"longBreak":"break";
+    PM.elapsed=0; PM.totalSecs=isLong?POMO_CFG.longBreak*60:POMO_CFG.shortBreak*60;
+    showToast(isLong?"Pausa longa! Descanse "+POMO_CFG.longBreak+" min 🧘":"Pausa curta! "+POMO_CFG.shortBreak+" min ☕");
+  } else {
+    // Break done → back to work — play break-complete alarm ☕
+    playAlarmBreak();
+    if(navigator.vibrate) navigator.vibrate(100);
+    PM.phase="work"; PM.elapsed=0; PM.totalSecs=POMO_CFG.work*60;
+    showToast("Hora de focar! 🍅 Pomodoro "+( PM.roundsDone+1));
+  }
+  pomoTick(); renderPomoPanel(); renderPomoFab();
+}
+
+function pomoStop(doRender=true){
+  clearInterval(PM._timer);
+  PM.phase="idle"; PM.taskId=null; PM.taskType=null; PM.taskName=""; PM.elapsed=0; PM.roundsDone=0;
+  if(doRender){ renderPomoFab(); renderPomoPanel(); render(); }
+}
+window.pomoStop = pomoStop;
+
+function pomoPause(){
+  if(PM._timer){ clearInterval(PM._timer); PM._timer=null; }
+  else { pomoTick(); }
+  renderPomoPanel(); renderPomoFab();
+}
+window.pomoPause = pomoPause;
+
+function pomoSkip(){
+  clearInterval(PM._timer);
+  if(PM.phase==="work"){
+    PM.roundsDone++;
+    const isLong=PM.roundsDone%POMO_CFG.longAfter===0;
+    PM.phase=isLong?"longBreak":"break"; PM.elapsed=0; PM.totalSecs=isLong?POMO_CFG.longBreak*60:POMO_CFG.shortBreak*60;
+  } else {
+    PM.phase="work"; PM.elapsed=0; PM.totalSecs=POMO_CFG.work*60;
+  }
+  pomoTick(); renderPomoPanel(); renderPomoFab();
+}
+window.pomoSkip = pomoSkip;
+
+function pomoTogglePanel(){ PM.panelOpen=!PM.panelOpen; renderPomoPanel(); }
+window.pomoTogglePanel = pomoTogglePanel;
+
+function renderPomoFab(){
+  let fab = document.getElementById("pomo-fab");
+  if(!fab){ fab=document.createElement("button"); fab.id="pomo-fab"; document.body.appendChild(fab); }
+  if(PM.phase==="idle"){ fab.style.display="none"; return; }
+  fab.style.display="flex";
+  fab.className="pomo-fab"+(PM.phase!=="work"?" break":"")+(PM._timer?" running":"");
+  const left=pomoSecsLeft();
+  fab.innerHTML=PM.phase==="work"?"🍅":PM.phase==="longBreak"?"🧘":"☕";
+  fab.title=pomoFmt(left)+" restantes";
+  fab.onclick=pomoTogglePanel;
+}
+
+function renderPomoPanel(){
+  let panel = document.getElementById("pomo-panel");
+  if(!panel){ panel=document.createElement("div"); panel.id="pomo-panel"; document.body.appendChild(panel); }
+  panel.className="pomo-panel"+(PM.panelOpen?"":" hidden");
+  if(PM.phase==="idle"){ panel.className="pomo-panel hidden"; return; }
+
+  const left=pomoSecsLeft(); const total=PM.totalSecs;
+  const pct=Math.max(0,Math.min(1,(total-left)/total));
+  const R=60; const circ=2*Math.PI*R;
+  const offset=circ*(1-pct);
+  const stroke=PM.phase==="work"?"var(--red)":PM.phase==="longBreak"?"var(--acc)":"var(--amb)";
+  const phaseLabel=PM.phase==="work"?"FOCO":PM.phase==="longBreak"?"PAUSA LONGA":"PAUSA";
+  const isPaused=!PM._timer;
+
+  // Dots for pomodoro count
+  const target=POMO_CFG.longAfter;
+  const dots=Array.from({length:target},(_,i)=>
+    `<div class="pomo-dot${i<PM.roundsDone%target?" done":""}" title="Pomodoro ${i+1}"></div>`
+  ).join("");
+
+  // History for this task
+  const item = PM.taskType==="acao"?D.acoes.find(a=>a.id===PM.taskId):PM.taskType==="rotina"?D.rotina.find(r=>r.id===PM.taskId):D.projetos.find(p=>p.id===PM.taskId);
+  const hist = item?.pomoHist||[];
+  const histHtml = hist.length?`
+    <div class="sec" style="margin-top:10px">Histórico desta tarefa</div>
+    <div class="pomo-hist">
+      ${[...hist].reverse().slice(0,10).map((h,i)=>`
+      <div class="pomo-hist-item">
+        <span style="color:var(--mid)">${h.data} ${h.hora}</span>
+        <span style="color:var(--red)">🍅 #${hist.length-i}</span>
+      </div>`).join("")}
+    </div>`:"";
+
+  panel.innerHTML=`
+    <div class="modal-handle" onclick="pomoTogglePanel()" style="cursor:pointer"></div>
+    <div class="pomo-task">${PM.taskName}</div>
+    <div class="pomo-ring-wrap">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <circle class="pomo-ring-bg" cx="70" cy="70" r="${R}"/>
+        <circle class="pomo-ring-fill" cx="70" cy="70" r="${R}"
+          stroke="${stroke}" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"/>
+      </svg>
+      <div class="pomo-time">
+        <span class="t" style="color:${stroke}">${pomoFmt(left)}</span>
+        <span class="lbl">${phaseLabel}</span>
+      </div>
+    </div>
+    <div class="pomo-count">${dots}<span style="font-size:11px;color:var(--mid);margin-left:4px">${PM.roundsDone} pomodoro${PM.roundsDone!==1?"s":""} hoje</span></div>
+    <div class="pomo-controls">
+      <button class="btn btn-g" onclick="pomoStop()" title="Parar">⏹</button>
+      <button class="btn" style="background:${stroke};color:#fff;min-width:80px" onclick="pomoPause()">${isPaused?"▶ Retomar":"⏸ Pausar"}</button>
+      <button class="btn btn-g" onclick="pomoSkip()" title="Pular fase">⏭</button>
+    </div>
+    <div style="text-align:center;margin-bottom:6px">
+      <button class="btn btn-g btn-sm" onclick="openModal('pomo-cfg')"><span aria-hidden="true">⚙️</span> Configurar</button>
+    </div>
+    ${histHtml}
+  `;
+}
+
+// ── Pomo config modal ──────────────────────────────────
+// (injected into renderModal)
+
+// Request notification permission on first load
+if(Notification.permission==="default") Notification.requestPermission();
+
+// ═══════════════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════════════
+(async function boot(){
+  // Handle ?cfg= param — auto-fill config from QR/link
+  const urlParams = new URLSearchParams(window.location.search);
+  const cfgParam = urlParams.get("cfg");
+  if(cfgParam && !CFG.sheetId){
+    try{
+      const decoded = JSON.parse(decodeURIComponent(escape(atob(cfgParam))));
+      CFG = {...CFG, ...decoded};
+      localStorage.setItem(CFG_KEY, JSON.stringify(CFG));
+      // Clean URL
+      window.history.replaceState({}, "", window.location.pathname);
+      showToast && showToast("Configuração importada! Clique em Salvar e Autorizar.");
+    } catch(e){ console.warn("cfg param error", e); }
+  }
+
+  // Handle OAuth callback
+  if (window.location.hash.includes("access_token")) {
+    handleOAuthCallback();
+    await syncFromSheets();
+  }
+  render();
+  // Auto-load from sheets on open
+  if (CFG.sheetId && CFG.apiKey && CFG.clientId) {
+    if (!CFG.accessToken) {
+      // No token — show reconnect banner
+      setTimeout(renderReconnectBtn, 500);
+    } else {
+      setTimeout(syncFromSheets, 500);
+    }
+  }
+})();
+</script>
+</body>
+</html>
